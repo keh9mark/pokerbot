@@ -32,10 +32,11 @@ async def handle_tournament_command(
         result = tg_interface.start_tournament()
     elif command_type == "price":
         # цена турнира
-        result = tg_interface.add_price_tournament()
+        result = tg_interface.add_price_tournament(context.args)
     elif command_type == "percent":
+        # TODO подумать над тем как заводить
         # указываем процентное соотношение победителей
-        result = tg_interface.add_percent_tournament()
+        result = tg_interface.add_percent_tournament(context.args)
     elif command_type == "add":
         # вход пользователя в турнир
         result = tg_interface.add_user(context.args)
@@ -69,11 +70,18 @@ async def start_tournament(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await handle_tournament_command(update, context, "start")
 
 
+async def add_price_tournament(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    await handle_tournament_command(update, context, "price")
+
+
 def main_func(bot_token: str):
     app = ApplicationBuilder().token(bot_token).build()
     app.add_handler(CommandHandler("new", new_tournament))
     app.add_handler(CommandHandler("stop", stop_tournament))
     app.add_handler(CommandHandler("start", start_tournament))
+    app.add_handler(CommandHandler("price", add_price_tournament))
     app.run_polling()
 
 

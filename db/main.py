@@ -1,4 +1,4 @@
-import typing
+import traceback
 
 from db.utils import get_datetime_msk, DBResponse, TGGroup
 
@@ -49,3 +49,48 @@ class DBAPI:
             }
             self.chat_items["active"] = tournament_name
             return DBResponse(status="success", text="")
+
+    def stop_tournament(self) -> DBResponse:
+        try:
+            active_tournament_name = self.chat_items["active"]
+            self.chat_items["active"] = None
+            self.tournaments[active_tournament_name]["times"][
+                "finished"
+            ] = get_datetime_msk()
+            result = DBResponse(status="success", text="")
+        except Exception:
+            print(traceback.format_exc())
+            result = DBResponse(
+                status="error", text="Непредвиденная ошибка. Обратитесь к разработчику"
+            )
+        return result
+
+    def start_tournament(self) -> DBResponse:
+        active_tournament_name = self.chat_items["active"]
+        if self.tournaments[active_tournament_name]["times"]["started"] is not None:
+            result = DBResponse(
+                status="error", text=f"Турнир {active_tournament_name} уже запущен"
+            )
+        try:
+            self.tournaments[active_tournament_name]["times"][
+                "started"
+            ] = get_datetime_msk()
+            result = DBResponse(status="success", text="")
+        except Exception:
+            print(traceback.format_exc())
+            result = DBResponse(
+                status="error", text="Непредвиденная ошибка. Обратитесь к разработчику"
+            )
+        return result
+
+    def add_price_tournament(self, price: int) -> DBResponse:
+        try:
+            active_tournament_name = self.chat_items["active"]
+            self.tournaments[active_tournament_name]["price"] = price
+            result = DBResponse(status="success", text="")
+        except Exception:
+            print(traceback.format_exc())
+            result = DBResponse(
+                status="error", text="Непредвиденная ошибка. Обратитесь к разработчику"
+            )
+        return result
