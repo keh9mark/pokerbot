@@ -38,9 +38,8 @@ class DBAPI:
                 "id": id(self),
                 "price": None,
                 "name": tournament_name,
-                "users": [],
+                "users": {},
                 "counts": [],
-                "rebuys": [],
                 "times": {
                     "created": get_datetime_msk(),
                     "started": None,
@@ -92,5 +91,48 @@ class DBAPI:
             print(traceback.format_exc())
             result = DBResponse(
                 status="error", text="Непредвиденная ошибка. Обратитесь к разработчику"
+            )
+        return result
+
+    def add_user(self, username: str) -> DBResponse:
+        active_tournament_name = self.chat_items["active"]
+        users = self.tournaments[active_tournament_name]["users"]
+        if username in users:
+            result = DBResponse(
+                status="error", text=f"Пользователь @{username} уже участвует в турнире"
+            )
+        else:
+            users[username] = {
+                "start": get_datetime_msk(),
+                "rebays": {},
+                "finished": None,
+            }
+            result = DBResponse(status="success", text="")
+        return result
+
+    def remove_user(self, username: str) -> DBResponse:
+        active_tournament_name = self.chat_items["active"]
+        users = self.tournaments[active_tournament_name]["users"]
+        if username not in users:
+            result = DBResponse(
+                status="error", text=f"Пользователь @{username} не участвует в турнире"
+            )
+        else:
+            users.pop(username, None)
+            result = DBResponse(status="success", text="")
+        return result
+
+    def rebay_user(self, username: str) -> DBResponse:
+        active_tournament_name = self.chat_items["active"]
+        users = self.tournaments[active_tournament_name]["users"]
+        if username not in users:
+            result = DBResponse(
+                status="error", text=f"Пользователь @{username} не участвует в турнире"
+            )
+        else:
+            rebays_count = len(users[username]["rebays"])
+            users[username]["rebays"][rebays_count] = get_datetime_msk()
+            result = DBResponse(
+                status="success", text=f"кол-во закупов: {rebays_count}"
             )
         return result

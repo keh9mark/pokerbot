@@ -78,3 +78,39 @@ class TGInterface:
                 print(traceback.format_exc())
                 text = f"Ошибка установки суммы входа в турнир"
         return text
+
+    def add_user(self, user: str) -> str:
+        active_tournament_name = self.db_api.is_active_tournament
+        if not active_tournament_name:
+            text = "Увы, нет активных турниров"
+        else:
+            db_response = self.db_api.add_user(user)
+            if db_response.status == "error":
+                text = f"Ошибка добавления пользователя: {db_response.text}"
+            else:
+                text = f"Пользователь @{user} успешно добавлен в турнир"
+        return text
+
+    def remove_user(self, user: str) -> str:
+        active_tournament_name = self.db_api.is_active_tournament
+        if not active_tournament_name:
+            text = "Увы, нет активных турниров"
+        else:
+            db_response = self.db_api.remove_user(user)
+            if db_response.status == "error":
+                text = f"Ошибка удаления пользователя: {db_response.text}"
+            else:
+                text = f"Пользователь @{user} успешно выгнан из турнира"
+        return text
+
+    def rebay_user(self, user: str) -> str:
+        active_tournament_name = self.db_api.is_active_tournament
+        if not active_tournament_name:
+            text = "Увы, нет активных турниров"
+        else:
+            db_response = self.db_api.rebay_user(user)
+            if db_response.status == "error":
+                text = f"Ошибка докупа пользователя: {db_response.text}"
+            else:
+                text = f"Пользователь @{user} успешно докупился в турнир"
+        return text
