@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 from core.main import TGGroup, TGInterface
+from db.manager import db_session
 
 
 def get_username(update: Update, args: list) -> str:
@@ -13,7 +14,19 @@ def get_username(update: Update, args: list) -> str:
     return username
 
 
+def context_session(func):
+
+    def wrapper(*args, **kwargs):
+        with db_session() as session:
+            res = func(session, *args, **kwargs)
+        return res
+
+    return wrapper
+
+
+@context_session
 async def handle_tournament_command(
+    session,
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     command_type: str,
@@ -26,9 +39,8 @@ async def handle_tournament_command(
             "Извините, данная команда доступна только в групповом чате ;((( "
         )
         return
-
-    tg_group = TGGroup(id=tg_chat_id)
-    tg_interface = TGInterface(tg_group)
+    tg_group = TGGroup(id=tg_chat_id, name=update.message.chat.title)
+    tg_interface = TGInterface(tg_group, session)
 
     if command_type == "new":
         # новый турнир

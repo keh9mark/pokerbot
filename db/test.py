@@ -1,6 +1,6 @@
 from db.core import DBCore
 from db.utils import TGGroup
-from db.db_api import db_session
+from db.manager import db_session
 
 from db.db_classes import Tournament
 

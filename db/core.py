@@ -94,6 +94,8 @@ class DBCore:
             )
         try:
             active_tournament.start_date = get_datetime_msk()
+            self.session.add(active_tournament)
+            self.session.commit()
             result = DBResponse(status="success", text="")
         except Exception:
             print(traceback.format_exc())
