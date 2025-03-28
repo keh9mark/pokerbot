@@ -1,7 +1,7 @@
 import traceback
 
 from db.utils import get_datetime_msk, DBResponse, TGGroup, ActiveTournament
-from db.db_classes import Chat, Tournament
+from db.db_classes import Chat, Tournament, User, UserGame
 
 
 class DBCore:
@@ -10,18 +10,13 @@ class DBCore:
         self.tg_group = tg_group
         self.session = session
         self.chat_item = self.get_chat_instance()
-        print(self.chat_item)
 
     def get_chat_instance(self):
         chat_instance = (
-            self.session.query(Chat)
-            .filter(Chat.tg_id == self.tg_group.id)
-            .first()
+            self.session.query(Chat).filter(Chat.tg_id == self.tg_group.id).first()
         )
         if chat_instance is None:
-            chat_instance = Chat(
-                tg_id=self.tg_group.id, name=self.tg_group.name
-            )
+            chat_instance = Chat(tg_id=self.tg_group.id, name=self.tg_group.name)
             self.session.add(chat_instance)
             self.session.commit()
         return chat_instance
@@ -44,8 +39,7 @@ class DBCore:
     @property
     def tournaments(self) -> dict:
         return {
-            tournament.name: tournament
-            for tournament in self.chat_item.tournaments
+            tournament.name: tournament for tournament in self.chat_item.tournaments
         }
 
     def make_tournment(self, tournament_name: str) -> DBResponse:
@@ -92,19 +86,14 @@ class DBCore:
         return result
 
     def start_tournament(self) -> DBResponse:
-        active_tournament_name = self.chat_items["active"]
-        if (
-            self.tournaments[active_tournament_name]["times"]["started"]
-            is not None
-        ):
+        active_tournament = self.active_tournament
+        if active_tournament.start_date is not None:
             result = DBResponse(
                 status="error",
-                text=f"Турнир {active_tournament_name} уже запущен",
+                text=f"Турнир {active_tournament.name} уже запущен",
             )
         try:
-            self.tournaments[active_tournament_name]["times"][
-                "started"
-            ] = get_datetime_msk()
+            active_tournament.start_date = get_datetime_msk()
             result = DBResponse(status="success", text="")
         except Exception:
             print(traceback.format_exc())
@@ -116,8 +105,8 @@ class DBCore:
 
     def add_price_tournament(self, price: int) -> DBResponse:
         try:
-            active_tournament_name = self.chat_items["active"]
-            self.tournaments[active_tournament_name]["price"] = price
+            active_tournament = self.active_tournament
+            active_tournament.price = price
             result = DBResponse(status="success", text="")
         except Exception:
             print(traceback.format_exc())
@@ -127,48 +116,75 @@ class DBCore:
             )
         return result
 
+    def _get_user_in_db(self, username: str) -> User:
+        user_obj = self.session.query(User).filter(User.username == username).first()
+        if user_obj is not None:
+            print(f"Юзер @{username} есть в бд")
+            return user_obj
+        user_obj = User(username=username)
+        print(f"Создали нового @{username}")
+        self.session.add(user_obj)
+        return user_obj
+
+    def _set_usergame(self, user_obj: User) -> None:
+        user_game = UserGame(
+            user=user_obj,
+            tournament=self.active_tournament,
+            attached=get_datetime_msk(),
+        )
+        self.session.add(user_game)
+        self.session.commit()
+
     def add_user(self, username: str) -> DBResponse:
-        active_tournament_name = self.chat_items["active"]
-        users = self.tournaments[active_tournament_name]["users"]
-        if username in users:
+        active_tournament = self.active_tournament
+        user_games = active_tournament.user_games
+        already_user_game = list(
+            filter(lambda obj: obj.user.username == username, user_games)
+        )
+        if already_user_game:
             result = DBResponse(
                 status="error",
                 text=f"Пользователь @{username} уже участвует в турнире",
             )
         else:
-            users[username] = {
-                "start": get_datetime_msk(),
-                "rebays": {},
-                "finished": None,
-            }
+            user_obj = self._get_user_in_db(username)
+            self._set_usergame(user_obj)
             result = DBResponse(status="success", text="")
         return result
 
     def remove_user(self, username: str) -> DBResponse:
-        active_tournament_name = self.chat_items["active"]
-        users = self.tournaments[active_tournament_name]["users"]
-        if username not in users:
+        active_tournament = self.active_tournament
+        user_games = active_tournament.user_games
+        already_user_games = list(
+            filter(lambda obj: obj.user.username == username, user_games)
+        )
+        if not already_user_games:
             result = DBResponse(
                 status="error",
                 text=f"Пользователь @{username} не участвует в турнире",
             )
         else:
-            users.pop(username, None)
+            self.session.delete(already_user_games[0])
+            self.session.commit()
             result = DBResponse(status="success", text="")
         return result
 
     def rebay_user(self, username: str) -> DBResponse:
-        active_tournament_name = self.chat_items["active"]
-        users = self.tournaments[active_tournament_name]["users"]
-        if username not in users:
+        active_tournament = self.active_tournament
+        user_games = active_tournament.user_games
+        already_user_games = list(
+            filter(lambda obj: obj.user.username == username, user_games)
+        )
+        if not already_user_games:
             result = DBResponse(
                 status="error",
                 text=f"Пользователь @{username} не участвует в турнире",
             )
         else:
-            rebays_count = len(users[username]["rebays"])
-            users[username]["rebays"][rebays_count] = get_datetime_msk()
+            user_game = already_user_games[0]
+            user_game.rebuys += 1
+            self.session.add(user_game)
             result = DBResponse(
-                status="success", text=f"кол-во закупов: {rebays_count}"
+                status="success", text=f"кол-во закупов: {user_game.rebuys}"
             )
         return result

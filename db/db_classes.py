@@ -46,9 +46,6 @@ class Tournament(Base):
     chat_id = Column(Integer, ForeignKey("chats.id"))
     chat = relationship("Chat", back_populates="tournaments")
 
-    def __repr__(self):
-        return f"<Tournament(name='{self.name}', start='{self.start_date}')>"
-
 
 class UserGame(Base):
     __tablename__ = "user_games"
@@ -74,9 +71,6 @@ class UserGame(Base):
     # Связь многие-к-одному с Tournament
     tournament_id = Column(Integer, ForeignKey("tournaments.id"))
     tournament = relationship("Tournament", back_populates="user_games")
-
-    def __repr__(self):
-        return f"<UserGame(user_id={self.user_id}, tournament_id={self.tournament_id}, score={self.score})>"
 
 
 class Chat(Base):

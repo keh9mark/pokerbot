@@ -71,9 +71,9 @@ async def handle_tournament_command(
             username = get_username(update, args)
             print(f"Докуп пользователя {username}")
             result = tg_interface.rebay_user(username)
-    elif command_type == "lose":
-        # проигрыш пользователя
-        result = tg_interface.lose_user(context.args)
+    # elif command_type == "lose":
+    #     # проигрыш пользователя
+    #     result = tg_interface.lose_user(context.args)
     elif command_type == "status":
         # текущее состояние турнира
         result = tg_interface.status_tournament(context.args)
