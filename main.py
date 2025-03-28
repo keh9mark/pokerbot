@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -141,6 +144,7 @@ def main_func(bot_token: str):
 
 
 if __name__ == "__main__":
-    from help.settings import BOT_TOKEN
+    load_dotenv()
+    BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
     main_func(BOT_TOKEN)
