@@ -6,9 +6,9 @@ from db.utils import TGGroup
 
 class TGInterface:
 
-    def __init__(self, tg_chat: TGGroup):
+    def __init__(self, tg_chat: TGGroup, session):
         # Создаем подключение к БД
-        self.db_api = DBAPI(tg_chat)
+        self.db_api = DBAPI(tg_chat, session)
 
     def new_tournament(self, args: list[str]) -> str:
         # проверим, есть ли в чате активные турниры
@@ -71,12 +71,12 @@ class TGInterface:
                 price = int(args[0])
                 db_response = self.db_api.add_price_tournament(price)
                 if db_response.status == "error":
-                    text = f"Ошибка установки суммы входа в турнир"
+                    text = "Ошибка установки суммы входа в турнир"
                 else:
                     text = f"Сумма входа в турнир '{price} рублей' успешно установлена"
             except:
                 print(traceback.format_exc())
-                text = f"Ошибка установки суммы входа в турнир"
+                text = "Ошибка установки суммы входа в турнир"
         return text
 
     def add_user(self, user: str) -> str:

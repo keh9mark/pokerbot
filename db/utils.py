@@ -7,15 +7,21 @@ import pytz
 moscow_tz = pytz.timezone("Europe/Moscow")
 
 
-def get_datetime_msk() -> str:
+def get_datetime_msk() -> datetime:
     moscow_time = datetime.now(moscow_tz)
-    return moscow_time.strftime("%d.%m.%Y %H:%M:%S")
+    return moscow_time
 
 
 class TGGroup(typing.NamedTuple):
     id: str
+    name: str
 
 
 class DBResponse(typing.NamedTuple):
     status: str
     text: str
+
+
+class ActiveTournament(typing.NamedTuple):
+    id: str
+    name: str
